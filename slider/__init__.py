@@ -6,7 +6,7 @@ import re
 
 class PresentationGenerator(object):
 
-    _slide_sep_re = re.compile(r'^---*(?P<args>\s*$|\s.*$)(?P<markdown>.*?(?=^--|\Z))', re.MULTILINE | re.DOTALL)
+    _slide_sep_re = re.compile(r'^---*(?P<args>\s*$|\s.*?$)(?P<markdown>.*?(?=^--|\Z))', re.MULTILINE | re.DOTALL)
 
     def __init__(self):
         pass
