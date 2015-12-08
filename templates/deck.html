@@ -1,0 +1,32 @@
+<!DOCTYPE html >
+<html>
+    <head>
+        <meta charset='utf-8' />
+
+        <title>{{ title }}</title>
+
+        {% for sheet in linked_stylsheets %}
+        <link rel='stylesheet' type='text/css' href='{{ sheet }}' />
+        {% endfor %}
+
+        {% if page_css %}
+        <style type='text/css'>
+        /* <![CDATA[ */
+        {{ page_css }}
+        /* ]]> */
+        </style>
+        {% endif %}
+
+    </head>
+    <body>
+        <article class='deck'>
+
+        {% for slide in slides %}
+            <section class='slide' id='slide-{{ slide.slide_number }}' >
+                {{ slide.html }}
+            </section><!-- end #slide-{{ slide.slide_number }} -->
+        {% endfor %}
+
+        </article>
+    </body>
+</html>

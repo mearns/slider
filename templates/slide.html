@@ -1,13 +1,18 @@
 {% for title in titles %}
-<h1 class='slide-title'>{{ title }}</h1>
-{% endfor %}
-{% for subtitle in subtitles %}
-<h2 class='slide-title'>{{ subtitle }}</h2>
+    {% if loop.index < 5 %}
+        <h{{ loop.index }} class='slide-title'>{{ title }}</h{{ loop.index }}>
+    {% else %}
+        <h5 class='slide-title'>{{ title }}</h5>
+    {% endif %}
 {% endfor %}
 
-{{ html|safe }}
+{{ content|safe }}
 
 <footer class='slide-footer'>
-    <span class='slide-number'>{{ slide_number }} / {{ slide_count }}</span>
-    <span class='slide-author'>{{ authors }}</span>
+    <span class='deck-location'><span class='slide-number'>{{ slide_number }}</span> / <span class='slide-count'>{{ slide_count }}</span></span>
+    <ol class='slide-authors'>
+    {% for author in authors %}
+        <li>{{ author }}</li>
+    {% endfor %}
+    </ol>
 </footer>

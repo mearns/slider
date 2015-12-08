@@ -1,14 +1,12 @@
 #! /usr/bin/env python
 # vim: set fileencoding=utf-8: set encoding=utf-8:
 
-import yaml
 import markdown
 import re
 import jinja2
 import types
 import collections
-from markdown.blockprocessors import BlockProcessor
-from markdown.extensions import Extension
+from .markdown_ext import SliderExtension
 
 class Author(object):
     def __init__(self, value):
@@ -18,7 +16,10 @@ class Author(object):
             self.data = dict()
             self.data.update(value)
         else:
-            raise TypeError('Author should be instantiated with a string or mapping.')
+            raise TypeError('Author should be instantiated with a string or mapping: %r' % (value,))
+
+    def get(self, key, default=None):
+        return self.data.get(key, default)
 
     def __str__(self):
         return self.get('name') or self.get('twitter') or self.get('email')
@@ -26,26 +27,84 @@ class Author(object):
     def __repr__(self):
         return '%s(%r)' % (type(self).__name__, self.data)
 
+class HelpfulDict(collections.Mapping):
+    def __init__(self, data):
+        self._data = dict(data)
 
-class YamlMetaProcessor(BlockProcessor):
-    def __init__(self, parser):
-        BlockProcessor.__init__(self, parser)
+    def __getitem__(self, key):
+        return self._data[key]
 
-        md = parser.markdown
-        if not hasattr(md, 'Meta'):
-            setattr(md, 'Meta', dict())
+    def __len__(self):
+        return len(self._data)
 
-    def test(self, parent, block):
-        print parent
-        return (not self.parser.markdown.Meta) and re.match(r'^[0-9a-zA-Z\._-]+:', block) is not None
+    def __iter__(self):
+        return iter(self._data)
 
-    def run(self, parent, blocks):
-        self.parser.markdown.Meta = yaml.load(blocks.pop(0))
+    def get_as_list(self, *keys):
+        results = []
+        for key in keys:
+            val = self._data.get(key, None)
+            if val is None:
+                val = []
+            elif isinstance(val, (types.StringTypes, collections.Mapping)):
+                val = [val]
+            elif isinstance(val, collections.Sequence):
+                val = list(val)
+            else:
+                val = [val]
+            results += val
+
+        return results
 
 
-class SliderExtension(Extension):
-    def extendMarkdown(self, md, md_globals):
-        md.parser.blockprocessors.add('yamlMeta', YamlMetaProcessor(md.parser), '_begin')
+
+class Slide(object):
+    def __init__(self, md, generator, slide_number, slide_count, markdown, *args, **kwargs):
+        self._slide_number = slide_number
+        self._slide_count = slide_count
+        self._classes = args
+
+        if kwargs:
+            if len(kwargs) == 1:
+                raise TypeError("Unexpected argument '%s'." % (kwargs.keys()[0],))
+            else:
+                raise TypeError("Unexpected arguments: %s" % ', '.join("'%s'" % k for k in kwargs.keys()))
+
+        #Parse the markdown
+        md.Meta.reset()
+        rendered_content = md.convert(markdown)
+        meta = HelpfulDict(md.Meta)
+
+        #Load the template and render the slide.
+        titles = meta.get_as_list('title')
+        self._html = generator.get_default_slide_template().render(dict(
+                meta = meta,
+                content = rendered_content,
+                slide_number = self._slide_number,
+                slide_count = self._slide_count,
+                deck_meta = generator.get_deck_meta(),
+                titles = titles,
+                title = titles[0] if titles else None,
+                authors = meta.get_as_list('author') or generator.get_authors()
+        ))
+            
+
+    @property
+    def html(self):
+        return self._html
+
+    @property
+    def slide_number(self):
+        return self._slide_number
+
+    @property
+    def slide_count(self):
+        return self._slide_count
+
+    @property
+    def classes(self):
+        return self._classes
+
 
 class PresentationGenerator(object):
 
@@ -53,13 +112,40 @@ class PresentationGenerator(object):
 
     def __init__(self):
         self._template_env = jinja2.Environment(loader = jinja2.FileSystemLoader(['./templates']))
+        self._meta = HelpfulDict({})
 
     def get_template(self, template_name):
+        """
+        Load a jinja template object with the given name.
+        """
         return self._template_env.get_template(template_name)
 
-    def markdown_to_html(self, istream, ostream):
+    def get_deck_template(self):
+        return self.get_template('deck.html')
+
+    def get_default_slide_template(self):
+        return self.get_template('slide.html')
+
+    def set_deck_meta(self, meta):
+        meta = HelpfulDict(meta)
+        self._meta = meta
+
+        #Parse the authors
+        self._authors = [Author(a) for a in meta.get_as_list('author')]
+
+        #And the presentation titles
+        self._titles = meta.get_as_list('title')
+        self._title = self._titles[0] if self._titles else None
+
+    def get_authors(self):
+        return self._authors
+
+    def get_deck_meta(self):
+        return self._meta
+        
+    def get_markdown_processor(self):
         #The markdown transcriber
-        md = markdown.Markdown(
+        return markdown.Markdown(
             output_format='xhtml5',
             safe_mode=False,
             extensions = [
@@ -69,84 +155,45 @@ class PresentationGenerator(object):
             ]
         )
 
-        #Write the file header.
-        ostream.write("""
-<!DOCTYPE html >
-<html>
-    <head>
-        <meta charset='utf-8' />
+    def markdown_to_html(self, istream, ostream):
+        md = self.get_markdown_processor()
 
-        <title>TODO: Untitled</title>
-
-        <link rel='stylesheet' type='text/css' href='style.css' />
-
-        <style type='text/css'>
-        /* <![CDATA[ */
-        /* TODO: Read CSS from file, put here. */
-        /* ]]> */
-        </style>
-    </head>
-    <body>
-        <article class="deck">
-
-""")
-        template_name = 'slide.html'
+        #Split the input into slides.
         source_data = istream.read()
         mobjs = tuple(self._slide_sep_re.finditer(source_data))
-        slide_count = len(mobjs)
 
+        #Everything before the first slide is the deck configuration and meta-data.
         if mobjs:
-            deck_content = source_data[:mobjs[0].start()]
+            deck_setup = source_data[:mobjs[0].start()]
         else:
-            deck_content = source_data
-        source_data = None
+            #If there were no slides, I guess the whole thing is the setup.
+            deck_setup = source_data
 
-        print 'Parsing deck_content:'
-        print '----------------------'
-        print deck_content
-        print '----------------------'
-        md.convert(deck_content)
-        print 'Parsed.'
-        deck_meta = md.Meta
-        deck_authors = [Author(a) for a in deck_meta.get('author', [])]
-        print deck_meta.get('author')
+        #Parse the deck_setup to get the data.
+        deck_text = md.convert(deck_setup)
+        if deck_text.strip():
+            raise ValueError("Oops, looks like you tried to put some content in the header. The first slide comes _after_ the first '--'.")
+        self.set_deck_meta(md.Meta.dict())
+
+        #Write the file header.
+        template_name = 'slide.html'
+
+        #Generator for all of the Slide obejcts
+        slide_count = len(mobjs)
+        slides = (Slide(
+            md, self, i, slide_count, mobj.group('markdown').lstrip(), *(mobj.group('args').split())
+        ) for i, mobj in enumerate(mobjs, 1))
         
-        #Generate and write out each slide.
-        for i, mobj in enumerate(mobjs, 1):
-            args = mobj.group('args')
-            classNames = args.split()
-            markdown_content = mobj.group('markdown').strip()
-
-            #Parse the slide
-            md.Meta = {}
-            text = md.convert(markdown_content)
-            meta = dict()
-            meta.update(md.Meta)
-
-            ostream.write("<section class='slide %s' id='slide-%d'>\n" % (' '.join(classNames), i,))
-
-            ostream.write(self.get_template(template_name).render(dict(
-                html = text,
-                markdown = markdown_content,
-                title = meta.get('title', [None])[0],
-                titles = meta.get('title', []),
-                subtitle = meta.get('subtitle', [None])[0],
-                subtitles = meta.get('subtitle', []),
-                slide_number = i,
-                slide_count = slide_count,
-                meta = meta,
-                deck_meta = deck_meta,
-                authors = [Author(a) for a in meta.get('author', [])] or deck_authors
-            )))
-            ostream.write("\n</section><!-- end #slide-%d -->\n\n" % (i,))
-            
-        #Write the file tail.
-        ostream.write("""
-        </article>
-    </body>
-</html>
-""")
-
+        #Write out the deck file.
+        ostream.write(self.get_deck_template().render(dict(
+            title = self._title,
+            titles = self._titles,
+            authors = self._authors,
+            linked_stylsheets = [],
+            page_css = None,
+            deck_meta = self._meta,
+            slides = slides,
+        )))
         
             
 
