@@ -1,0 +1,13 @@
+{% for title in titles %}
+<h1 class='slide-title'>{{ title }}</h1>
+{% endfor %}
+{% for subtitle in subtitles %}
+<h2 class='slide-title'>{{ subtitle }}</h2>
+{% endfor %}
+
+{{ html|safe }}
+
+<footer class='slide-footer'>
+    <span class='slide-number'>{{ slide_number }} / {{ slide_count }}</span>
+    <span class='slide-author'>{{ authors }}</span>
+</footer>

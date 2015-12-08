@@ -8,6 +8,7 @@ if __name__ == '__main__':
     import codecs
     import sys
 
-    PresentationGenerator().markdown_to_html(codecs.open("test.md", mode='r', encoding='utf-8'), sys.stdout)
+    with open('test.html', 'w') as ofile:
+        PresentationGenerator().markdown_to_html(codecs.open("test.md", mode='r', encoding='utf-8'), ofile)
 
 
