@@ -115,8 +115,10 @@ class PresentationGenerator(object):
         self._meta = HelpfulDict({})
         self._search_path = ['res']
         self._stylesheets = ['core.css']
+        self._javascripts = ['jquery-2.1.4.min.js', 'nav.js']
         self._embed_all = False
         self._embed_stylesheets = False
+        self._embed_javascripts = False
 
     def get_template(self, template_name):
         """
@@ -125,20 +127,36 @@ class PresentationGenerator(object):
         env = jinja2.Environment(loader = jinja2.FileSystemLoader([os.path.join(p, 'templates') for p in self._search_path]))
         return env.get_template(template_name)
 
-    def get_stylesheet(self, name):
+    def find_resource(self, res_type, name):
         for path in self._search_path:
-            fullpath = os.path.join(path, 'style', name)
+            fullpath = os.path.join(path, res_type, name)
             if os.path.exists(fullpath):
                 return fullpath
         return None
+        
+
+    def get_stylesheet(self, name):
+        """
+        Find the path to a named stylesheet by searching the search_path.
+        """
+        return self.find_resource('style', name)
+
+    def get_javascript(self, name):
+        return self.find_resource('script', name)
 
     def get_linked_stylesheets(self):
+        """
+        Get an array of paths or URLs to stylesheets that should be linked from the presentation.
+        """
         if self._embed_all or self._embed_stylesheets:
             return []
         else:
             return [self.get_stylesheet(s) for s in self._stylesheets]
         
     def get_css(self):
+        """
+        Get CSS that should be embedded directly in the presentation, as a string. Or None.
+        """
         if self._embed_all or self._embed_stylesheets:
             css = []
             for stylesheet in self._stylesheets:
@@ -151,6 +169,22 @@ class PresentationGenerator(object):
         else:
             return None
                 
+    def get_linked_javascripts(self):
+        if self._embed_all or self._embed_javascripts:
+            return []
+        else:
+            return [self.get_javascript(s) for s in self._javascripts]
+
+    def get_embedded_javascripts(self):
+        scripts = []
+        if self._embed_all or self._embed_javascripts:
+            for script in self._javascripts:
+                path = self.get_javascript(script)
+                if path is not None:
+                    with open(path, 'rb') as ifile:
+                        scripts.append('// --- %s ---\n%s' % (script, ifile.read()))
+        return scripts
+    
 
     def get_deck_template(self):
         return self.get_template('deck.html')
@@ -225,6 +259,8 @@ class PresentationGenerator(object):
             page_css = self.get_css(),
             deck_meta = self._meta,
             slides = slides,
+            linked_javascripts = self.get_linked_javascripts(),
+            embedded_javascripts = self.get_embedded_javascripts(),
         )))
         
             

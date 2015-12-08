@@ -28,5 +28,25 @@
         {% endfor %}
 
         </article>
+
+        <nav>
+            <ul>
+                <li><button id='prev-slide'>prev</button></li>
+                <li><button id='next-slide'>next</button></li>
+            </ul>
+        </nav>
+
+        {% for script in linked_javascripts %}
+        <script type='text/javascript' src='{{ script }}'></script>
+        {% endfor %}
+
+        {% for script in embedded_javascripts %}
+        <script type='text/javascript'>
+        //<![CDATA[
+        {{ script }}
+        //]]>
+        </script>
+        {% endfor %}
+
     </body>
 </html>
