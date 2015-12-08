@@ -6,6 +6,7 @@ import re
 import jinja2
 import types
 import collections
+import os.path
 from .markdown_ext import SliderExtension
 
 class Author(object):
@@ -111,14 +112,45 @@ class PresentationGenerator(object):
     _slide_sep_re = re.compile(r'^---*(?P<args>\s*$|\s.*?$)(?P<markdown>.*?(?=^--|\Z))', re.MULTILINE | re.DOTALL)
 
     def __init__(self):
-        self._template_env = jinja2.Environment(loader = jinja2.FileSystemLoader(['./templates']))
         self._meta = HelpfulDict({})
+        self._search_path = ['res']
+        self._stylesheets = ['core.css']
+        self._embed_all = False
+        self._embed_stylesheets = False
 
     def get_template(self, template_name):
         """
         Load a jinja template object with the given name.
         """
-        return self._template_env.get_template(template_name)
+        env = jinja2.Environment(loader = jinja2.FileSystemLoader([os.path.join(p, 'templates') for p in self._search_path]))
+        return env.get_template(template_name)
+
+    def get_stylesheet(self, name):
+        for path in self._search_path:
+            fullpath = os.path.join(path, 'style', name)
+            if os.path.exists(fullpath):
+                return fullpath
+        return None
+
+    def get_linked_stylesheets(self):
+        if self._embed_all or self._embed_stylesheets:
+            return []
+        else:
+            return [self.get_stylesheet(s) for s in self._stylesheets]
+        
+    def get_css(self):
+        if self._embed_all or self._embed_stylesheets:
+            css = []
+            for stylesheet in self._stylesheets:
+                path = self.get_stylesheet(stylesheet)
+                if path is not None:
+                    with open(path, 'rb') as ifile:
+                        css.append((stylesheet, ifile.read()))
+
+            return '\n\n'.join('/* %s */\n%s' % (path, content) for (path, content) in css)
+        else:
+            return None
+                
 
     def get_deck_template(self):
         return self.get_template('deck.html')
@@ -189,8 +221,8 @@ class PresentationGenerator(object):
             title = self._title,
             titles = self._titles,
             authors = self._authors,
-            linked_stylsheets = [],
-            page_css = None,
+            linked_stylsheets = self.get_linked_stylesheets(),
+            page_css = self.get_css(),
             deck_meta = self._meta,
             slides = slides,
         )))
