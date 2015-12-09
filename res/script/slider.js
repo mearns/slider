@@ -8,6 +8,10 @@ function Slider() {
     self.slides = $('section.slide');
     self.currentSlide = null;
 
+    self.gotoFirstSlide = function() {
+        self.setCurrentSlide(self.slides[0]);
+    };
+
     self.setCurrentSlide = function(selector) {
         var slide = $(selector);
         console.log("Setting current slide to: ", selector, slide);
