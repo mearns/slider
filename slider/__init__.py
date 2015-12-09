@@ -115,7 +115,7 @@ class PresentationGenerator(object):
         self._meta = HelpfulDict({})
         self._search_path = ['res']
         self._stylesheets = ['core.css']
-        self._javascripts = ['jquery-2.1.4.min.js', 'nav.js']
+        self._javascripts = ['jquery-2.1.4.min.js', 'slider.js']
         self._embed_all = False
         self._embed_stylesheets = False
         self._embed_javascripts = False
