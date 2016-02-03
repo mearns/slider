@@ -2,6 +2,56 @@
 
 A simple tool for generating self-contained HTML slide shows from Markdown.
 
+## Authoring a Presentation
+
+A presentation is contained in a single file. The beginning of each slide is denoted
+by a sequence of at least three dashes at the start of the line. This is
+reffered to as the *slide start line*.
+
+Beneath the _slide start line_ is markdown text defining the content of the
+slide.
+
+### Slide parameters
+
+The _slide start line_ can contain optional parameters, following the initial
+sequence of dashes, separated from it by whitespace. Individual parameters are
+also separated by whitespace.
+
+There are three types of parameters: _layout_ parameters, _class_ parameters,
+and _id_ parameters.
+
+A *layout parameter* specifies the name of the template to use to layout the
+slide. There will typically only be one of these per slide, but you can
+provide additional parameters to specify _fallback_ layouts, in case the
+specified layout is not found. In this case, layouts are applied from first to
+last (left to right) until one is found. Layout parameters are specified
+literally, without any indicator.
+
+A *class parameter* specifies a CSS class to apply to the slide. These
+parameters are always prefixed with a '.' character.
+
+An *id parameter* specifies an ID that will be applied to the slide, for
+referenceing in hyperlinks. These paramters are always prefixed with a '#'
+character.
+
+### Fragments
+
+A slide can be divided into a sequence of fragments, with fragments separated
+by a line containing at least three dots at the start of the line. Fragments
+are loaded sequentially as you progress through the slide.
+
+### Semantic Elements
+
+Sldier differentiates between _semantic_ elements and _presentation_ elements.
+Semantic elements are specified in a YAML format immediately following the
+_slide start line_. These elements can be used to specify things like the
+slide-title and author, which are made available to the template which renders
+the slide.
+
+Markdown (or HTML) elements, including titles, are considered _presentation_
+elements, and are not treated in any special way: they are simply rendered as
+part of the body of the slide.
+
 ## Appearance and Layout
 
 Individual slides can have a layout and any number of styles specified.
