@@ -17,7 +17,7 @@ function Card(content) {
      */
     self.render = function(ele) {
         console.log("rendering to ", ele);
-        ele.html(self._content);
+        $(ele).html(self._content);
         console.log("rendered: " + self._content);
     };
 

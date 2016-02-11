@@ -13,8 +13,7 @@
 
     </head>
     <body>
-        <article class='deck' id='presentation'>
-        
+        <article class='presentation' id='presentation'>
         </article>
 
         <nav class='page-nav'>
@@ -43,7 +42,7 @@
                 .add(new Card("<h2>Slide four</h2>"))
                 .build();
 
-            var presentation = new Presentation(deck, $('#presentation'))
+            var presentation = new Presentation(deck, document.getElementById('presentation'))
                     .useAsNextSlideButton('#next-slide')
                     .useAsPrevSlideButton('#prev-slide')
                     ;
