@@ -9,6 +9,9 @@ function Presentation(deck, ele) {
     self._currentSlide = null;
 
     self._init = function() {
+        $(window).on('hashchange', function() {
+            self.gotoHash();
+        });
         self.gotoHash();
     };
 
@@ -34,10 +37,15 @@ function Presentation(deck, ele) {
     };
 
     self.gotoSlide = function(id) {
+        var id = self._deck.getSlide(id);
         if(id !== null) {
             self._currentSlide = id;
-            self._deck.render(self._currentSlide, self._ele);
         }
+        var newHash = '#' + self._currentSlide;
+        if(location.hash != newHash) {
+            location.hash = newHash;
+        }
+        self._deck.render(self._currentSlide, self._ele);
     };
 
     self.useAsNextSlideButton = function(ele) {
