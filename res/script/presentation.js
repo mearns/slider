@@ -9,6 +9,20 @@ function Presentation(deck, ele) {
     self._currentSlide = null;
 
     self._init = function() {
+
+        $(document).keypress(function(event) {
+            switch(event.keyCode) {
+                case 37:    //left
+                    self.prevSlide();
+                    event.preventDefault();
+                    break;
+                case 39:    //right
+                    self.nextSlide();
+                    event.preventDefault();
+                    break;
+            }
+        });
+
         $(window).on('hashchange', function() {
             self.gotoHash();
         });
