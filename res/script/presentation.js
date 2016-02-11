@@ -34,8 +34,10 @@ function Presentation(deck, ele) {
     };
 
     self.gotoSlide = function(id) {
-        self._currentSlide = id;
-        self._deck.render(self._currentSlide, self._ele);
+        if(id !== null) {
+            self._currentSlide = id;
+            self._deck.render(self._currentSlide, self._ele);
+        }
     };
 
     self.useAsNextSlideButton = function(ele) {
