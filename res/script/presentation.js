@@ -44,7 +44,10 @@ function Presentation(deck, ele) {
 
     self.gotoHash = function() {
         if (location.hash != "") {
-            self.gotoSlide(location.hash.substr(1));
+            var id = location.hash.substr(1);
+            if (id != self._currentId) {
+                self.gotoSlide(id);
+            }
         } else {
             //Do the default.
             self.gotoFirstSlide();
