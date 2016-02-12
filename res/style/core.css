@@ -1,29 +1,42 @@
 
-.presentation {
-    width: 100%;
+html, body {
     height: 100%;
     padding: 0;
     margin: 0;
-    border: 0;
+}
+
+.presentation {
+    width: 100%;
+    min-height: 100%;
+    padding: 0;
+    margin: 0;
+    border: 2px solid black;
     position: relative;
 }
 
 .presentation .buffer {
-    display: inline-block;
-    border: 1px solid grey;
+    border: 2px solid green;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    position: absolute;
 }
 
-.presentation .slide {
+.presentation .buffer .slide {
     border: 2px solid blue;
     width: 260px;
     height: 260px;
     padding: 10px;
-    margin: 10px;
-    position: absolute;
+    margin: 10px auto;
 }
 
-.presentation .slide._incoming {
-    left: 100%;
+.buffer._incoming .slide {
+    border: 2px solid yellow;
+}
+
+.buffer._outgoing .slide {
+    border: 2px solid red;
 }
 
 nav.page-nav {

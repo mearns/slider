@@ -7,7 +7,7 @@ function Presentation(deck, ele) {
     self._deck = deck;
     self._ele = $(ele)[0];
     self._currentId = null;
-    self._currentSlide = null;
+    self._currentBuffer = null;
 
     self._init = function() {
 
@@ -53,13 +53,15 @@ function Presentation(deck, ele) {
 
     function _animateSlides($outgoing, $incoming) {
         console.log("Animating", $outgoing, $incoming);
+        var duration = 5000;
 
-        var duration = 300;
+        $incoming.css("left", "105%");
+        self._ele.appendChild($incoming[0]);
+
         if($outgoing !== null) {
-        
-            $outgoing.css('left', '');
+            $outgoing.css("left", "0");
             $outgoing.animate(
-                {right: "100%"},
+                {left: "-105%"},
                 {
                     duration: duration,
                     queue: false,
@@ -93,20 +95,26 @@ function Presentation(deck, ele) {
             location.hash = newHash;
         }
 
-        var $curr = null;
-        if (self._currentSlide !== null) {
-            $curr = $(self._currentSlide);
-            $curr.addClass("_outgoing");
+        var $outgoing = null;
+        if (self._currentBuffer !== null) {
+            $outgoing = $(self._currentBuffer);
+            $outgoing.addClass("_outgoing");
         }
 
+        //Full-sized buffer to hold the incoming slide.
         var incoming = document.createElement("div");
-        incoming.className = "slide _incoming";
-        self._deck.render(self._currentId, incoming);
-        self._ele.appendChild(incoming);
-        self._currentSlide = incoming;
+        incoming.className = "buffer _incoming";
+
+        //The incoming slide itself.
+        var inslide = document.createElement("div");
+        inslide.className = "slide";
+        self._deck.render(self._currentId, inslide);
+        incoming.appendChild(inslide);
+        
+        self._currentBuffer = incoming;
 
         var $incoming = $(incoming);
-        _animateSlides($curr, $incoming);
+        _animateSlides($outgoing, $incoming);
     };
 
     self.useAsNextSlideButton = function(ele) {
