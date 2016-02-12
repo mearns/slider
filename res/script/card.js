@@ -1,9 +1,12 @@
 
-function Card(content) {
+function Card(content, templateManager) {
 
     var self = this;
 
+    self._templateManager = templateManager;
     self._content = content;
+    self._theme = "default";
+    self._template = "default";
     self._ids = [];
 
     self._init = function() {};
@@ -16,9 +19,11 @@ function Card(content) {
      * Renders this slide to the given parent element.
      */
     self.render = function(ele) {
-        console.log("rendering to ", ele);
-        $(ele).html(self._content);
-        console.log("rendered: " + self._content);
+        self._templateManager.getTemplate(self._theme, self._template, function(template) {
+            $(ele).html(template({
+                body: self._content
+            }));
+        });
     };
 
 

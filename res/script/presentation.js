@@ -9,8 +9,7 @@ function Presentation(deck, ele) {
     self._currentId = null;
     self._currentBuffer = null;
 
-    self._init = function() {
-
+    function _init() {
         $(document).keypress(function(event) {
             switch(event.keyCode) {
                 case 37:    //left
@@ -130,6 +129,6 @@ function Presentation(deck, ele) {
         return self;
     };
 
-    self._init();
+    _init();
 }
 

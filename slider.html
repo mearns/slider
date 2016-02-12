@@ -6,7 +6,7 @@
         <title>Velocity NYC 2015</title>
 
         
-        <link rel='stylesheet' type='text/css' href='res\style\core.css' />
+        <link rel='stylesheet' type='text/css' href='res/style/core.css' />
         
 
         
@@ -24,10 +24,12 @@
         </nav>
 
         
-        <script type='text/javascript' src='res\script\jquery-2.1.4.min.js'></script>
-        <script type='text/javascript' src='res\script\presentation.js'></script>
-        <script type='text/javascript' src='res\script\deck.js'></script>
-        <script type='text/javascript' src='res\script\card.js'></script>
+        <script type='text/javascript' src='https://ajax.googleapis.com/ajax/libs/jquery/2.2.0/jquery.min.js'></script>
+        <script type='text/javascript' src='https://cdnjs.cloudflare.com/ajax/libs/handlebars.js/4.0.5/handlebars.min.js'></script>
+        <script type='text/javascript' src='res/script/presentation.js'></script>
+        <script type='text/javascript' src='res/script/deck.js'></script>
+        <script type='text/javascript' src='res/script/card.js'></script>
+        <script type='text/javascript' src='res/script/handlebarsTemplateManager.js'></script>
         
         
         <script type='text/javascript'>
@@ -35,11 +37,13 @@
 
         $(document).ready(function() {
 
+            var templateMgr = new HandlebarsTemplateManager();
+
             var deck = new DeckBuilder()
-                .add(new Card("<h2>Slide one</h2>"))
-                .add(new Card("<h2>Slide two</h2>"))
-                .add(new Card("<h2>Slide three</h2>"))
-                .add(new Card("<h2>Slide four</h2>"))
+                .add(new Card("<h2>Slide one</h2>", templateMgr))
+                .add(new Card("<h2>Slide two</h2>", templateMgr))
+                .add(new Card("<h2>Slide three</h2>", templateMgr))
+                .add(new Card("<h2>Slide four</h2>", templateMgr))
                 .build();
 
             var presentation = new Presentation(deck, document.getElementById('presentation'))
