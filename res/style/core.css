@@ -14,7 +14,6 @@ html, body {
 }
 
 .presentation .buffer {
-    border: 2px solid green;
     width: 100%;
     height: 100%;
     margin: 0;
@@ -23,11 +22,16 @@ html, body {
 }
 
 .presentation .buffer .slide {
-    border: 2px solid blue;
-    width: 720px;
-    height: 560px;
-    padding: 10px;
-    margin: 10px auto;
+    border: 2px solid #ccc;
+    margin: 5vh auto;
+
+    /**
+     * 16:9 aspect ratio, dynamically resized to fill 90% of the viewport's height.
+     */
+    height: 90vh;
+    width: 160vh;
+    max-width: 90vw;
+    max-height: 50.625vw; /* 16:9, inverted, times the 90vw of max-width */
 }
 
 .buffer._incoming .slide {

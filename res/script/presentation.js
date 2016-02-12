@@ -56,7 +56,7 @@ function Presentation(deck, ele) {
 
     function _animateSlides($outgoing, $incoming) {
         console.log("Animating", $outgoing, $incoming);
-        var duration = 5000;
+        var duration = 500;
 
         $incoming.css("left", "105%");
         self._ele.appendChild($incoming[0]);
