@@ -7,7 +7,7 @@ function Presentation(deck, ele) {
     self._deck = deck;
     self._ele = $(ele)[0];
     self._currentId = null;
-    self._currentBuffer = null;
+    self._currentSlide = null;
 
     function _init() {
         $(document).keypress(function(event) {
@@ -54,7 +54,6 @@ function Presentation(deck, ele) {
     };
 
     function _animateSlides($outgoing, $incoming) {
-        console.log("Animating", $outgoing, $incoming);
         var duration = 500;
 
         $incoming.css("left", "105%");
@@ -98,22 +97,17 @@ function Presentation(deck, ele) {
         }
 
         var $outgoing = null;
-        if (self._currentBuffer !== null) {
-            $outgoing = $(self._currentBuffer);
+        if (self._currentSlide !== null) {
+            $outgoing = $(self._currentSlide);
             $outgoing.addClass("_outgoing");
         }
 
-        //Full-sized buffer to hold the incoming slide.
+        //Create and render the slide to a new slide div.
         var incoming = document.createElement("div");
-        incoming.className = "buffer _incoming";
-
-        //The incoming slide itself.
-        var inslide = document.createElement("div");
-        inslide.className = "slide";
-        self._deck.render(self._currentId, inslide);
-        incoming.appendChild(inslide);
+        incoming.className = "slide _incoming";
+        self._deck.render(self._currentId, incoming);
         
-        self._currentBuffer = incoming;
+        self._currentSlide = incoming;
 
         var $incoming = $(incoming);
         _animateSlides($outgoing, $incoming);

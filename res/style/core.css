@@ -13,7 +13,7 @@ html, body {
     position: fixed;
 }
 
-.presentation .buffer {
+.presentation .slide {
     width: 100%;
     height: 100%;
     margin: 0;
@@ -21,7 +21,13 @@ html, body {
     position: absolute;
 }
 
-.presentation .buffer .slide {
+.slide._incoming {
+}
+
+.slide._outgoing {
+}
+
+.aspect_16x9 {
     border: 2px solid #ccc;
     margin: 5vh auto;
 
@@ -32,12 +38,6 @@ html, body {
     width: 160vh;
     max-width: 90vw;
     max-height: 50.625vw; /* 16:9, inverted, times the 90vw of max-width */
-}
-
-.buffer._incoming .slide {
-}
-
-.buffer._outgoing .slide {
 }
 
 nav.page-nav {
