@@ -53,12 +53,15 @@ function Presentation(deck, ele) {
 
     function _animateSlides($outgoing, $incoming) {
         console.log("Animating", $outgoing, $incoming);
+
+        var duration = 300;
         if($outgoing !== null) {
         
+            $outgoing.css('left', '');
             $outgoing.animate(
-                {left: "-500px"},
+                {right: "100%"},
                 {
-                    duration: 800,
+                    duration: duration,
                     queue: false,
                     complete: function() {
                         self._ele.removeChild($outgoing[0]);
@@ -68,9 +71,9 @@ function Presentation(deck, ele) {
         }
 
         $incoming.animate(
-            {left: "-500px"},
+            {left: "0%"},
             {
-                duration: 800,
+                duration: duration,
                 queue: false,
                 complete: function() {
                     $incoming.removeClass("_incoming");

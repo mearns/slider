@@ -19,6 +19,11 @@
     height: 260px;
     padding: 10px;
     margin: 10px;
+    position: absolute;
+}
+
+.presentation .slide._incoming {
+    left: 100%;
 }
 
 nav.page-nav {
