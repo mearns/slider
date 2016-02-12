@@ -1,0 +1,59 @@
+<!DOCTYPE html >
+<html>
+    <head>
+        <meta charset='utf-8' />
+
+        <title>OOP Test</title>
+
+    </head>
+    <body>
+
+        <script type='text/javascript' src='/res/script/class.js' ></script>
+
+        <script type='text/javascript'>
+        // <![CDATA[
+        
+            var Animal = new Class("Animal", {
+
+                speach: function() {
+                    return "Animal sound.";
+                },
+
+                speak: function() {
+                    console.log(this.speach());
+                }
+            }
+            );
+
+            var GenericAnimal = new Class("GenericAnimal", {
+                speach: function() {
+                    return "Generic " + this.super.speach();
+                }
+            },
+            Animal);
+
+            var SpecificAnimal = new Class("SpecificAnimal", {
+                speach: function() {
+                    return "Non-" + this.super.speach();
+                }
+            },
+            GenericAnimal);
+
+
+            var a = Animal.create();
+            var g = GenericAnimal.create();
+            var s = SpecificAnimal.create();
+            
+            console.log(a.speach());
+            console.log(g.speach());
+            console.log(s.speach());
+
+            a.speak();
+            g.speak();
+            s.speak();
+        
+        // ]]>
+        </script>
+    </body>
+</html>
+
