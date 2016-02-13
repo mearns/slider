@@ -13,7 +13,7 @@
         <script type='text/javascript'>
         // <![CDATA[
         
-            var Animal = new Class("Animal", {
+            var Animal = Class.create("Animal", {
 
                 speach: function() {
                     return "Animal sound.";
@@ -25,14 +25,14 @@
             }
             );
 
-            var GenericAnimal = new Class("GenericAnimal", {
+            var GenericAnimal = Class.create("GenericAnimal", {
                 speach: function() {
                     return "Generic " + this.super.speach();
                 }
             },
             Animal);
 
-            var SpecificAnimal = new Class("SpecificAnimal", {
+            var SpecificAnimal = Class.create("SpecificAnimal", {
                 speach: function() {
                     return "Non-" + this.super.speach();
                 }
