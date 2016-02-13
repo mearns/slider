@@ -64,7 +64,7 @@ var Class = new (function Class(){
             //Now we override and extend the methods from the parent classes by updating the object
             // with those methods that were provided. We'll bind them to obj, and attach them to
             // obj as well.
-            _bindAll(obj, obj, self.__methods__);
+            _bindAll(obj, obj, methods);
             obj.super = sup;
             return obj;
         },

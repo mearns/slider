@@ -22,19 +22,20 @@
                 speak: function() {
                     console.log(this.speach());
                 }
-            }
+            },
+            Thing
             );
 
             var GenericAnimal = Class.create("GenericAnimal", {
                 speach: function() {
-                    return "Generic " + this.super.speach();
+                    return "Generic "; //+ this.super.speach();
                 }
             },
             Animal);
 
             var SpecificAnimal = Class.create("SpecificAnimal", {
                 speach: function() {
-                    return "Non-" + this.super.speach();
+                    return "Non-"; // + this.super.speach();
                 }
             },
             GenericAnimal);
