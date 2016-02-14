@@ -2,7 +2,7 @@
 
 function module_init() {
 
-    var _QuasiClass = new (function Class(){
+    var _QuasiClass = new (function _QuasiClassJSObj(){
 
         var self = this;
 
@@ -75,6 +75,7 @@ function module_init() {
              * of the class, the dictionary of methods, and the parent class.
              */
             create: function() {
+                console.log("Class::create from:", this.__name__, arguments);
                 return _create(this, new Object(), arguments);
             },
 
@@ -110,6 +111,7 @@ function module_init() {
             obj.__class__ = self;
 
             //Bind and attach all methods provided by this class to the given object.
+            console.log("Calling __instantiate__ from ", self);
             self.__instantiate__(obj);
             
             //Use the class-specific __init__ method to setup the object.
@@ -143,22 +145,63 @@ function module_init() {
 
     })();
 
-    Thing = _QuasiClass.create("_ThingMeta_", {
+    //ThingMeta will be a metaclass for the Thing class, so Thing will be of type
+    //ThingMeta. The ThingMeta clas object therefore has to have a special
+    //__intatiate__ method which will not attempt to go any higher, because Thing
+    //is its own superclass, so that would recurse forever.
+    //
+    //Therefore ThingMeta must be an instance of another class: it can't be an instance
+    // of just _QuasiClass, because then it would have the normal __instantiate__ method.
+    // Therefore, ThingMeta has to have its own meta class, which we'll cal ThingMetaMeta.
+    // ThingMetaMeta is the class that will provide the special __instantiate__ method
+    // that ThingMeta requires.
+
+    ThingMetaMeta = _QuasiClass.create("_ThingMetaMeta_", {
         __instantiate__: function(obj) {
             //Since this is the top-level meta class, it's not going to try to go up any higher.
+            console.log("ThingMetaMeta Instatiate");
             this.bindAll(obj, obj, this.__methods__);
             obj.super = obj;
             return obj;
         }
-    }, _QuasiClass).create("Thing", {});
+    }, _QuasiClass);
+
+    //ThingMeta IS_A ThingMetaMeta. So as an object, it's an instance of type ThingMetaMeta.
+    //But ThingMetaMeta is an instance of type _QuasiClass class, so ThingMetaMeta is a class
+    //class and likewise, ThingMeta is a class class. Specifically, it's a subclass of _QuasiClass.
+    ThingMeta = ThingMetaMeta.create("_ThingMeta_", {}, _QuasiClass);
+
+    //FIXME: Thing and ThingMeta are not getting the default methods from Thing.
+    var Thing = ThingMeta.create("Thing", {
+    
+        //Object methods
+        getClass: function() {
+            return this.__class__;
+        },
+
+        getClassName: function() {
+            return this.__class__.__name__;
+        }
+
+    });
     //Thing is the top-level class, so it's its own super class. This is cheating a little, but it works:
     // call it botstrapping. And it's critical that Thing is an instance of ThingMeta for this to work.
     Thing.__parent__ = Thing;
 
-    //Now recreate Class as a subclass of Thing, because everything is a Thing.
+    //Thing is now properly a class which provides a few default methods to every instance.
+    //But as an object, it's not an instance of itself, which is bad, because everything is supposed
+    //to be an instance of Thing. It also means it does have any of the default methods that it
+    //provides to all other instances.
+
+    //So now recreate Class as a subclass of Thing, because everything is a Thing. And the methods
+    //provided by Class are those that we defined for _QuasiClass.
     Class = _QuasiClass.create("Class", _QuasiClass.__methods__, Thing);
     //And class is of type Class, so bootstrap that, too. Am I useing that work right?
     Class.__class__ = Class;
+
+    //Using our new Class class, which is properly a subclass of Thing, we can create a new
+    // instance (i.e., a new class object) to server as ThingMetaMeta.
+    //XXX:
 
     //Lastly, we created "ThingMeta" as a subclass of the first Class, we want to replace that.
     Thing.__class__.__class__ = Class;
