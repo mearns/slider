@@ -49,6 +49,14 @@ function module_init() {
         }
     };
 
+    function _bindAllClassMethods(attachTo, bindTo, cls) {
+        var methodName;
+        for(methodName in cls.__methods__) {
+            var description = 'Method provided by ' + cls.__name__;
+            _bindTo(attachTo, bindTo, methodName, cls.__superize_method__(methodName, description), description);
+        }
+    };
+
     /**
      * Helper method to create an instance of a class.
      *
@@ -89,6 +97,9 @@ function module_init() {
         return {};
     };
 
+    var Thing = _newObject("ThingClass");
+    var Class = _newObject("Class");
+
     //The methods provided by the top-level Thing class.
     var methodsProvidedByThing = {
 
@@ -102,10 +113,6 @@ function module_init() {
 
     };
 
-    var Thing = _newObject("ThingClass");
-    var Class = _newObject("Class");
-
-    
     //The methods provided by the Class class.
     var methodsProvidedByClass = {
 
@@ -134,7 +141,6 @@ function module_init() {
             };
         },
 
-
         /**
          * Instantiate the given object as an instance of this type, binding and attaching all methods provided by this class
          * and the parent classes to the given object.
@@ -144,20 +150,11 @@ function module_init() {
             // Then we can override and extend these with the given dict of methods, below.
             this.__parent__.__instantiate__(attachTo, bindTo);
 
-            //At each level of the type heirachy, I need to create a super delegate for that method
-            // on behalf of this object (bindTo).
-            // The super delegate will set this.super to be the super delegate for the same method
-            // in the parent class, and then invoke the method, and unset this.super. The delegate
-            // then needs to be bound to bindTo.
-
             //Now we override and extend the methods from the parent classes by updating the object
             // with those methods that were provided. We'll bind them to obj, and attach them to
             // obj as well.
-            var methodName;
-            for(methodName in this.__methods__) {
-                var method = this.__superize_method__(methodName, 'Method provided by ' + this.__name__);
-                _bindTo(attachTo, bindTo, methodName, method, 'Method provided by ' + this.__name__);
-            }
+            _bindAllClassMethods(attachTo, bindTo, this);
+
             return attachTo;
         },
 
@@ -180,16 +177,11 @@ function module_init() {
          * Create a subclass of this object. The meta class is the same as
          * this object's metaclass, unless specified.
          */
-        subclass: function(name, methods, metaclass) {
+        subclass: function(name, methods, metaClass) {
             if (typeof(metaclass) === "undefined") {
-                metaClass = this.getParentClass();
+                metaClass = this.__class__;
             }
             return metaClass.create(name, methods, this);
-        },
-
-        //FIXME: This is duplicated right above, which one is right?
-        subclass: function(name, methods) {
-            return this.__class__.create(name, methods, this);
         },
 
         getParentClass: function() {
