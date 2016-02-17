@@ -13,7 +13,8 @@
 
 function module_init() {
 
-    function _bind(target, method) {
+    function _bind(target, method, methodName) {
+        //console.log("Binding " + methodName + " to:", target);
         return function() {
             return method.apply(target, arguments);
         }
@@ -25,7 +26,7 @@ function module_init() {
      * the given `methodName`.
      */
     function _bindTo(attachTo, bindTo, methodName, method) {
-        attachTo[methodName] = _bind(bindTo, method);
+        attachTo[methodName] = _bind(bindTo, method, methodName);
     };
 
     /**
@@ -56,7 +57,7 @@ function module_init() {
         obj.__class__ = self;
 
         //Bind and attach all methods provided by this class to the given object.
-        self.__instantiate__(obj);
+        self.__instantiate__(obj, obj);
         
         //Use the class-specific __init__ method to setup the object.
         if('__init__' in obj) {
@@ -65,6 +66,12 @@ function module_init() {
         return obj;
     };
 
+    function _newObject(className) {
+        var func = new Function(
+            "return function " + className + "(){};"
+        )();
+        return new func();
+    };
 
     var methodsProvidedByThing = {
 
@@ -85,21 +92,23 @@ function module_init() {
          * Instantiate the given object as an instance of this type, binding and attaching all methods provided by this class
          * and the parent classes to the given object.
          */
-        __instantiate__: function(obj) {
-            //XXX: TODO: Populate super correctly.
-            var sup = {};
+        __instantiate__: function(attachTo, bindTo) {
+            //TODO: Super can probably be a true object (i.e., a Thing).
+            var sup = new (function Super(){})();
+            //TODO: Should never be undefined, The Class::__init__ method should check for undefined and make it Thing.
             if (typeof(this.__parent__) !== "undefined") {
                 //Initially, bind and attach all methods from the parent class onto this object (transitively up the heirarchy).
                 // Then we can override and extend these with the given dict of methods, below.
-                this.__parent__.__instantiate__(obj);
+                this.__parent__.__instantiate__(attachTo, bindTo);
+                this.__parent__.__instantiate__(sup, bindTo);
             }
 
             //Now we override and extend the methods from the parent classes by updating the object
             // with those methods that were provided. We'll bind them to obj, and attach them to
             // obj as well.
-            _bindAll(obj, obj, this.__methods__);
-            obj.super = sup;
-            return obj;
+            _bindAll(attachTo, bindTo, this.__methods__);
+            attachTo.super = sup;
+            return attachTo;
         },
 
         /**
@@ -114,7 +123,7 @@ function module_init() {
          * of the class, the dictionary of methods, and the parent class.
          */
         create: function() {
-            return _create(this, {}, arguments);
+            return _create(this, _newObject(this.__name__), arguments);
         },
 
         //TODO: Test.
@@ -143,8 +152,8 @@ function module_init() {
         }
     };
 
-    Thing = {};
-    Class = {};
+    var Thing = _newObject("ThingClass");
+    var Class = _newObject("Class");
 
     /// Bootsrap the creation of the Class class.
 
@@ -171,26 +180,27 @@ function module_init() {
 
     //Except Thing needs a different __instantiate__ method, which doesn't try to
     // go up any higher, so it doesn't go up forever.
-    var instantiateAThing = function(obj) {
+    var instantiateAThing = function(attachTo, bindTo) {
         //Now we override and extend the methods from the parent classes by updating the object
         // with those methods that were provided. We'll bind them to obj, and attach them to
         // obj as well.
-        _bindAll(obj, obj, this.__methods__);
+        _bindAll(attachTo, bindTo, this.__methods__);
 
         //An instance of Thing is it's own super object, since Thing is it's own parent class.
-        obj.super = obj;
-        return obj;
+        //FIXME: Does this work right?
+        attachTo.super = attachTo;
+        return attachTo;
     };
-    Thing.__instantiate__ = _bind(Thing, instantiateAThing);
-
-    //But that means it must have gotten that method from somewhere else, it had to override
-    // the one provided by Class. So it must have a different meta class. Let's create that.
-    Thing.__class__ = Class.create("ThingMeta", {__instantiate__: instantiateAThing}, Class);
+    Thing.__instantiate__ = _bind(Thing, instantiateAThing, "instantiateAThing");
 
     //Init the object, as a class. It is it's own parent class (because all classes
     // extend from Thing).
     Thing.__init__("Thing", methodsProvidedByThing, Thing);
 
+    //Because it has a different __instantiate__ method, it must have gotten that method from somewhere 
+    // other than Class, because it had to override the one provided by Class. So it must have a
+    // different meta class. Let's create that.
+    Thing.__class__ = Class.create("ThingClass", {__instantiate__: instantiateAThing}, Class);
 
     return Thing;
 }

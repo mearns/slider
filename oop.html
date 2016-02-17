@@ -14,6 +14,13 @@
         // <![CDATA[
         
 
+            //FIXME: Shouldn't need to do this, should be another way to get the top-level Class.
+            // Or maybe not, if I just provide an extend() method on classes, I shouldn't really
+            // need direct access to Class. But I do need to make sure that when I extend Thing,
+            // it doesn't create a new class of type ThingClass, but directly of type Class.
+            // Which probably just means an override of extend() in ThingClass.
+            var Class = Thing.getClass().getClass();
+
             var Animal = Class.create("Animal", {
 
                 speach: function() {
@@ -29,14 +36,14 @@
 
             var GenericAnimal = Class.create("GenericAnimal", {
                 speach: function() {
-                    return "Generic "; //+ this.super.speach();
+                    return "Generic " + this.super.speach();
                 }
             },
             Animal);
 
             var SpecificAnimal = Class.create("SpecificAnimal", {
                 speach: function() {
-                    return "Non-"; // + this.super.speach();
+                    return "Non-" + this.super.speach();
                 }
             },
             GenericAnimal);
