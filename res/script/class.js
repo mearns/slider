@@ -88,7 +88,6 @@ function module_init() {
         return obj;
     };
 
-    //TODO: Can use this Function type to make classes functions so the javascript new operator can be used?
     function _newObject(className) {
         var func = new Function(
             "return function " + className + "(){};"
