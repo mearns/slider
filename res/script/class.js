@@ -13,7 +13,7 @@
 
 function module_init() {
 
-    var __debug__ = false;
+    var __debug__ = true;
 
     function _bind(target, method, methodName, description) {
         var f = function() {
@@ -29,36 +29,23 @@ function module_init() {
         return f;
     };
 
-    function _bindSuper(target, method, methodName, description) {
-        return _bind(target, function() {
-            var sup = this.super;
-            this.super = sup.super;
-            var ret =method.apply(this, arguments);
-            this.super = sup;
-            return ret;
-        }, methodName, description);
-    }
-
     /**
      * Creata a bound method that invokes `method` on `bindTo`,
      * and _attach_ the bound method to the `attachTo` object with
      * the given `methodName`.
      */
-    function _bindTo(attachTo, bindTo, methodName, method, description, bindFunc) {
-        if (typeof(bindFunc) === 'undefined') {
-            bindFunc = _bind;
-        }
-        attachTo[methodName] = bindFunc(bindTo, method, methodName, description);
+    function _bindTo(attachTo, bindTo, methodName, method, description) {
+        attachTo[methodName] = _bind(bindTo, method, methodName, description);
     };
 
     /**
      * Given a dictionary of `methods`, `_bindTo` each one to the given
      * `bindTo` object, and _attach_ them to the given `attachTo`.
      */
-    function _bindAll(attachTo, bindTo, methods, description, bindFunc) {
+    function _bindAll(attachTo, bindTo, methods, description) {
         var methodName;
         for(methodName in methods) {
-            _bindTo(attachTo, bindTo, methodName, methods[methodName], description, bindFunc);
+            _bindTo(attachTo, bindTo, methodName, methods[methodName], description);
         }
     };
 
@@ -115,29 +102,69 @@ function module_init() {
 
     };
 
+    function _bindMethod(attachTo, bindTo, methodName, impl, parentImpl, description) {
+        var sup;
+        if(typeof(parentImpl) === "undefined") {
+            sup = function() {
+                throw "Method '" + methodName + "' does not exist in parent class, super delegation not available.";
+            };
+        } else {
+            sup = _bind(bindTo, parentImpl, methodName, 'Super delegate for: ' + description);
+        }
+
+        var wrappedMethod = function() {
+            this.super = sup;
+            var ret;
+            try {
+                console.log("Invoking wrapped method '" + methodName + "'");
+                ret = impl.apply(this, arguments);
+            } finally {
+                delete(this.super);
+            }
+            return ret;
+        };
+
+        _bindTo(attachTo, bindTo, methodName, impl, description);
+
+    };
+
+    var Thing = _newObject("ThingClass");
+    var Class = _newObject("Class");
+
+    
     //The methods provided by the Class class.
     var methodsProvidedByClass = {
+
+        superDelegate: function(obj) {
+            var sup = _newObject("__SuperDelegate_" + this.__name__);
+            this.__instantiate__(sup, obj);
+            return sup;
+        },
 
         /**
          * Instantiate the given object as an instance of this type, binding and attaching all methods provided by this class
          * and the parent classes to the given object.
          */
-        __instantiate__: function(attachTo, bindTo, bindFunc) {
-            //TODO: Super can probably be a true object (i.e., a Thing).
-            var sup = _newObject("Super_" + this.__name__);
-            //TODO: Should never be undefined, The Class::__init__ method should check for undefined and make it Thing.
-            if (typeof(this.__parent__) !== "undefined") {
-                //Initially, bind and attach all methods from the parent class onto this object (transitively up the heirarchy).
-                // Then we can override and extend these with the given dict of methods, below.
-                this.__parent__.__instantiate__(attachTo, bindTo, bindFunc);
-                this.__parent__.__instantiate__(sup, bindTo, _bindSuper);
-            }
+        __instantiate__: function(attachTo, bindTo) {
+            //Initially, bind and attach all methods from the parent class onto this object (transitively up the heirarchy).
+            // Then we can override and extend these with the given dict of methods, below.
+            this.__parent__.__instantiate__(attachTo, bindTo);
+
+            //At each level of the type heirachy, I need to create a super delegate for that method
+            // on behalf of this object (bindTo).
+            // The super delegate will set this.super to be the super delegate for the same method
+            // in the parent class, and then invoke the method, and unset this.super. The delegate
+            // then needs to be bound to bindTo.
 
             //Now we override and extend the methods from the parent classes by updating the object
             // with those methods that were provided. We'll bind them to obj, and attach them to
             // obj as well.
-            _bindAll(attachTo, bindTo, this.__methods__, 'Method provided by ' + this.__name__, bindFunc);
-            attachTo.super = sup;
+            var methodName;
+            for(methodName in this.__methods__) {
+                var method = this.__methods__[methodName];
+                var parentImpl = this.__parent__.__methods__[methodName];
+                _bindMethod(attachTo, bindTo, methodName, method, parentImpl, 'Method provided by ' + this.__name__);
+            }
             return attachTo;
         },
 
@@ -167,8 +194,7 @@ function module_init() {
             return metaClass.create(name, methods, this);
         },
 
-
-        //TODO: Test.
+        //FIXME: This is duplicated right above, which one is right?
         subclass: function(name, methods) {
             return this.__class__.create(name, methods, this);
         },
@@ -188,14 +214,14 @@ function module_init() {
          * class `__name__`, the `__parent__` class, and the `__methods__` dictionary.
          */
         __init__: function(name, methods, parent) {
+            if (typeof(parent) === 'undefined') {
+                parent = Thing;
+            }
             this.__name__ = name;
             this.__parent__ = parent;
             this.__methods__ = methods;
         }
     };
-
-    var Thing = _newObject("ThingClass");
-    var Class = _newObject("Class");
 
     /// Bootsrap the creation of the Class class.
 
@@ -228,11 +254,6 @@ function module_init() {
         // obj as well.
         _bindAll(attachTo, bindTo, this.__methods__, 'Methods added by ThingClass from ' + this.__name__, bindFunc);
 
-        //An instance of Thing is it's own super object, since Thing is it's own parent class.
-        //FIXME: Does this work right?
-        var sup = {};
-        sup.super = sup;
-        attachTo.super = sup;
         return attachTo;
     };
     Thing.__instantiate__ = _bind(Thing, instantiateAThing, "instantiateAThing");

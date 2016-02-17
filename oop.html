@@ -12,14 +12,6 @@
 
         <script type='text/javascript'>
         // <![CDATA[
-        
-
-            //FIXME: Shouldn't need to do this, should be another way to get the top-level Class.
-            // Or maybe not, if I just provide an extend() method on classes, I shouldn't really
-            // need direct access to Class. But I do need to make sure that when I extend Thing,
-            // it doesn't create a new class of type ThingClass, but directly of type Class.
-            // Which probably just means an override of extend() in ThingClass.
-            var Class = Thing.getClass().getClass();
 
             var Animal = Thing.subclass("Animal", {
 
@@ -31,22 +23,31 @@
                     console.log(this.speach());
                 },
 
+                //XXX: FIXME: When binding parent methods, this.super that's available
+                // there needs to be the appropriately higher level.
+                //
+                // E.g., when creating an instance of GenericAnimal, we bind this
+                // method from the Animal class to the GenericAnimal object. It's
+                // super object also has this object attached to it (bound to the
+                // same GenericAnimal object), and because of _bindSuper, the super
+                // object attached to it when that's run has Thing's getClassName
+                // method attached, so it doesn't go forever.
+                // But when invoking an inherited method, the super object needs
+                // to be modified.
                 getClassName: function() {
-                    return "Animal: " + this.super.getClassName();
+                    return "Animal: " + Thing.superDelegate(this).getClassName();
                 }
             });
 
             var GenericAnimal = Animal.subclass("GenericAnimal", {
                 speach: function() {
-                    return "Generic " + this.super.speach();
+                    return "Generic " + Animal.superDelegate(this).getClassName();
                 }
             });
 
             var SpecificAnimal = GenericAnimal.subclass("SpecificAnimal", {
-                //XXX: FIXME: When binding parent methods, this.super that's available
-                // there needs to be the appropriately higher level.
                 speach: function() {
-                    return "Non-" + this.super.speach();
+                    return "Non-" + GenericAnimal.superDelegate(this).getClassName();
                 }
             });
 
