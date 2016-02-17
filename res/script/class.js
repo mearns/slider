@@ -16,6 +16,7 @@ function module_init() {
     var __debug__ = false;
 
     function _bind(target, method, methodName, description) {
+        //TODO: can we create a dynamically named function for these?
         var f = function() {
             //TODO: Can we use a real logging library?
             if (__debug__) {
@@ -49,11 +50,11 @@ function module_init() {
         }
     };
 
-    function _bindAllClassMethods(attachTo, bindTo, cls) {
+    function _bindAllClassMethods(obj, cls) {
         var methodName;
         for(methodName in cls.__methods__) {
             var description = 'Method provided by ' + cls.__name__;
-            _bindTo(attachTo, bindTo, methodName, cls.__superize_method__(methodName, description), description);
+            _bindTo(obj, obj, methodName, cls.__superize_method__(methodName, description), description);
         }
     };
 
@@ -145,17 +146,17 @@ function module_init() {
          * Instantiate the given object as an instance of this type, binding and attaching all methods provided by this class
          * and the parent classes to the given object.
          */
-        __instantiate__: function(attachTo, bindTo) {
+        __instantiate__: function(obj) {
             //Initially, bind and attach all methods from the parent class onto this object (transitively up the heirarchy).
             // Then we can override and extend these with the given dict of methods, below.
-            this.__parent__.__instantiate__(attachTo, bindTo);
+            this.__parent__.__instantiate__(obj);
 
             //Now we override and extend the methods from the parent classes by updating the object
             // with those methods that were provided. We'll bind them to obj, and attach them to
             // obj as well.
-            _bindAllClassMethods(attachTo, bindTo, this);
+            _bindAllClassMethods(obj, this);
 
-            return attachTo;
+            return obj;
         },
 
         /**
@@ -207,9 +208,9 @@ function module_init() {
             this.__methods__ = methods;
         }
     };
-
+    
     /// Bootsrap the creation of the Class class.
-
+    
     //Class is an object, so it has all the methods provided by Thing.
     _bindAll(Class, Class, methodsProvidedByThing, 'Methods bootstrapped for Class from Thing.');
 
@@ -233,13 +234,13 @@ function module_init() {
 
     //Except Thing needs a different __instantiate__ method, which doesn't try to
     // go up any higher, so it doesn't go up forever.
-    var instantiateAThing = function(attachTo, bindTo, bindFunc) {
+    var instantiateAThing = function(obj) {
         //Now we override and extend the methods from the parent classes by updating the object
         // with those methods that were provided. We'll bind them to obj, and attach them to
         // obj as well.
-        _bindAll(attachTo, bindTo, this.__methods__, 'Methods added by ThingClass from ' + this.__name__, bindFunc);
+        _bindAll(obj, obj, this.__methods__, 'Methods added by ThingClass from ' + this.__name__);
 
-        return attachTo;
+        return obj;
     };
     Thing.__instantiate__ = _bind(Thing, instantiateAThing, "instantiateAThing");
 

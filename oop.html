@@ -40,26 +40,41 @@
                 }
             });
 
+            var Dog = SpecificAnimal.subclass("Dog", {
+                speach: function() {
+                    return "W00f!";
+                },
+
+                //FIXME: XXX: getClassName does not exist in parent class!
+                getClassName: function() {
+                    return "Dog's class: " + this.super();
+                }
+            });
+
 
             var a = Animal.create();
             var g = GenericAnimal.create();
             var s = SpecificAnimal.create();
+            var d = Dog.create();
             
             console.log(a.speach());
             console.log(g.speach());
             console.log(s.speach());
+            console.log(d.speach());
 
             console.log("-----------------------------------------------");
 
             a.speak();
             g.speak();
             s.speak();
+            d.speak();
 
             console.log("-----------------------------------------------");
 
             //This should not be "Animal: Animal: Animal: SpecificAnimal".
             // It should just be "Animal: SpecificAnimal".
             console.log(s.getClassName());
+            console.log(d.getClassName());
         
         // ]]>
         </script>
