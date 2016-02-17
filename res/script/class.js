@@ -13,7 +13,7 @@
 
 function module_init() {
 
-    var __debug__ = true;
+    var __debug__ = false;
 
     function _bind(target, method, methodName, description) {
         var f = function() {
@@ -80,7 +80,7 @@ function module_init() {
      * a proper OOP instance.
      */
     function _newObject(className) {
-        if (__debug__) {
+        if (true || __debug__) {
             var func = new Function(
                 "return function " + className + "(){};"
             )();
@@ -102,32 +102,6 @@ function module_init() {
 
     };
 
-    function _bindMethod(attachTo, bindTo, methodName, impl, parentImpl, description) {
-        var sup;
-        if(typeof(parentImpl) === "undefined") {
-            sup = function() {
-                throw "Method '" + methodName + "' does not exist in parent class, super delegation not available.";
-            };
-        } else {
-            sup = _bind(bindTo, parentImpl, methodName, 'Super delegate for: ' + description);
-        }
-
-        var wrappedMethod = function() {
-            this.super = sup;
-            var ret;
-            try {
-                console.log("Invoking wrapped method '" + methodName + "'");
-                ret = impl.apply(this, arguments);
-            } finally {
-                delete(this.super);
-            }
-            return ret;
-        };
-
-        _bindTo(attachTo, bindTo, methodName, impl, description);
-
-    };
-
     var Thing = _newObject("ThingClass");
     var Class = _newObject("Class");
 
@@ -135,11 +109,31 @@ function module_init() {
     //The methods provided by the Class class.
     var methodsProvidedByClass = {
 
-        superDelegate: function(obj) {
-            var sup = _newObject("__SuperDelegate_" + this.__name__);
-            this.__instantiate__(sup, obj);
-            return sup;
+        __superize_method__: function(methodName, description) {
+            var impl = this.__methods__[methodName];
+            var parentImpl = this.__parent__.__methods__[methodName];
+
+            var sup;
+            if(typeof(parentImpl) === "undefined") {
+                sup = function() {
+                    throw "Method '" + methodName + "' does not exist in parent class, super delegation not available.";
+                };
+            } else {
+                sup = this.__parent__.__superize_method__(methodName, 'Super delegate from ' + this.__name__ + ' for ' + methodName + ' described as: ' + description);
+            }
+
+            return wrappedMethod = function() {
+                this.super = sup;
+                var ret;
+                try {
+                    ret = impl.apply(this, arguments);
+                } finally {
+                    delete(this.super);
+                }
+                return ret;
+            };
         },
+
 
         /**
          * Instantiate the given object as an instance of this type, binding and attaching all methods provided by this class
@@ -161,9 +155,8 @@ function module_init() {
             // obj as well.
             var methodName;
             for(methodName in this.__methods__) {
-                var method = this.__methods__[methodName];
-                var parentImpl = this.__parent__.__methods__[methodName];
-                _bindMethod(attachTo, bindTo, methodName, method, parentImpl, 'Method provided by ' + this.__name__);
+                var method = this.__superize_method__(methodName, 'Method provided by ' + this.__name__);
+                _bindTo(attachTo, bindTo, methodName, method, 'Method provided by ' + this.__name__);
             }
             return attachTo;
         },
@@ -269,6 +262,26 @@ function module_init() {
     Thing.subclass = _bind(Thing, subclassThing, "subclassThing");
 
 
+    var superizeAThingMethod = function(methodName, description) {
+        var impl = this.__methods__[methodName];
+
+        var sup = function() {
+            throw "Thing is the top level class, cannot use super delegation.";
+        };
+
+        return wrappedMethod = function() {
+            this.super = sup;
+            var ret;
+            try {
+                ret = impl.apply(this, arguments);
+            } finally {
+                delete(this.super);
+            }
+            return ret;
+        };
+    };
+    Thing.__superize_method__ = _bind(Thing, superizeAThingMethod, "superizeAThingMethod");
+
     //Init the object, as a class. It is it's own parent class (because all classes
     // extend from Thing).
     Thing.__init__("Thing", methodsProvidedByThing, Thing);
@@ -278,7 +291,8 @@ function module_init() {
     // different meta class. Let's create that.
     Thing.__class__ = Class.subclass("ThingClass", {
         __instantiate__: instantiateAThing,
-        subclass: subclassThing
+        subclass: subclassThing,
+        __superize_method__: superizeAThingMethod
     });
 
     return Thing;

@@ -23,31 +23,20 @@
                     console.log(this.speach());
                 },
 
-                //XXX: FIXME: When binding parent methods, this.super that's available
-                // there needs to be the appropriately higher level.
-                //
-                // E.g., when creating an instance of GenericAnimal, we bind this
-                // method from the Animal class to the GenericAnimal object. It's
-                // super object also has this object attached to it (bound to the
-                // same GenericAnimal object), and because of _bindSuper, the super
-                // object attached to it when that's run has Thing's getClassName
-                // method attached, so it doesn't go forever.
-                // But when invoking an inherited method, the super object needs
-                // to be modified.
                 getClassName: function() {
-                    return "Animal: " + Thing.superDelegate(this).getClassName();
+                    return "Animal: " + this.super();
                 }
             });
 
             var GenericAnimal = Animal.subclass("GenericAnimal", {
                 speach: function() {
-                    return "Generic " + Animal.superDelegate(this).getClassName();
+                    return "Generic " + this.super();
                 }
             });
 
             var SpecificAnimal = GenericAnimal.subclass("SpecificAnimal", {
                 speach: function() {
-                    return "Non-" + GenericAnimal.superDelegate(this).getClassName();
+                    return "Non-" + this.super();
                 }
             });
 
