@@ -13,30 +13,52 @@
 
 function module_init() {
 
-    function _bind(target, method, methodName) {
-        //console.log("Binding " + methodName + " to:", target);
-        return function() {
+    var __debug__ = false;
+
+    function _bind(target, method, methodName, description) {
+        var f = function() {
+            //TODO: Can we use a real logging library?
+            if (__debug__) {
+                console.log("Invoking method '" + methodName + "', described as '" +  description + "', bound to:", target);
+            }
             return method.apply(target, arguments);
         }
+        f.methodName = methodName;
+        f.target = target;
+        f.description = description;
+        return f;
     };
+
+    function _bindSuper(target, method, methodName, description) {
+        return _bind(target, function() {
+            var sup = this.super;
+            this.super = sup.super;
+            var ret =method.apply(this, arguments);
+            this.super = sup;
+            return ret;
+        }, methodName, description);
+    }
 
     /**
      * Creata a bound method that invokes `method` on `bindTo`,
      * and _attach_ the bound method to the `attachTo` object with
      * the given `methodName`.
      */
-    function _bindTo(attachTo, bindTo, methodName, method) {
-        attachTo[methodName] = _bind(bindTo, method, methodName);
+    function _bindTo(attachTo, bindTo, methodName, method, description, bindFunc) {
+        if (typeof(bindFunc) === 'undefined') {
+            bindFunc = _bind;
+        }
+        attachTo[methodName] = bindFunc(bindTo, method, methodName, description);
     };
 
     /**
      * Given a dictionary of `methods`, `_bindTo` each one to the given
      * `bindTo` object, and _attach_ them to the given `attachTo`.
      */
-    function _bindAll(attachTo, bindTo, methods) {
+    function _bindAll(attachTo, bindTo, methods, description, bindFunc) {
         var methodName;
         for(methodName in methods) {
-            _bindTo(attachTo, bindTo, methodName, methods[methodName]);
+            _bindTo(attachTo, bindTo, methodName, methods[methodName], description, bindFunc);
         }
     };
 
@@ -66,7 +88,7 @@ function module_init() {
         return obj;
     };
 
-    //TODO: Can use use this Function type to make classes functions so the javascript new operator can be used?
+    //TODO: Can use this Function type to make classes functions so the javascript new operator can be used?
     function _newObject(className) {
         var func = new Function(
             "return function " + className + "(){};"
@@ -93,21 +115,21 @@ function module_init() {
          * Instantiate the given object as an instance of this type, binding and attaching all methods provided by this class
          * and the parent classes to the given object.
          */
-        __instantiate__: function(attachTo, bindTo) {
+        __instantiate__: function(attachTo, bindTo, bindFunc) {
             //TODO: Super can probably be a true object (i.e., a Thing).
-            var sup = new (function Super(){})();
+            var sup = _newObject("Super_" + this.__name__);
             //TODO: Should never be undefined, The Class::__init__ method should check for undefined and make it Thing.
             if (typeof(this.__parent__) !== "undefined") {
                 //Initially, bind and attach all methods from the parent class onto this object (transitively up the heirarchy).
                 // Then we can override and extend these with the given dict of methods, below.
-                this.__parent__.__instantiate__(attachTo, bindTo);
-                this.__parent__.__instantiate__(sup, bindTo);
+                this.__parent__.__instantiate__(attachTo, bindTo, bindFunc);
+                this.__parent__.__instantiate__(sup, bindTo, _bindSuper);
             }
 
             //Now we override and extend the methods from the parent classes by updating the object
             // with those methods that were provided. We'll bind them to obj, and attach them to
             // obj as well.
-            _bindAll(attachTo, bindTo, this.__methods__);
+            _bindAll(attachTo, bindTo, this.__methods__, 'Method provided by ' + this.__name__, bindFunc);
             attachTo.super = sup;
             return attachTo;
         },
@@ -171,10 +193,10 @@ function module_init() {
     /// Bootsrap the creation of the Class class.
 
     //Class is an object, so it has all the methods provided by Thing.
-    _bindAll(Class, Class, methodsProvidedByThing);
+    _bindAll(Class, Class, methodsProvidedByThing, 'Methods bootstrapped for Class from Thing.');
 
     //Then add in the methods specific to the Class type.
-    _bindAll(Class, Class, methodsProvidedByClass);
+    _bindAll(Class, Class, methodsProvidedByClass, 'Methods bootstrapped for Class from Class.');
 
     //Init the object. It's a subclass of Thing (everything is).
     Class.__init__("Class", methodsProvidedByClass, Thing);
@@ -186,18 +208,18 @@ function module_init() {
     /// Bootsrap the creation of the Thing class.
     
     //Thing is an object, so it has all the methods provided by Thing.
-    _bindAll(Thing, Thing, methodsProvidedByThing);
+    _bindAll(Thing, Thing, methodsProvidedByThing, 'Methods bootstrapped for Thing from Thing.');
 
     //Thing is also a Class, so it has all the methods provided by Class.
-    _bindAll(Thing, Thing, methodsProvidedByClass);
+    _bindAll(Thing, Thing, methodsProvidedByClass, 'Methods bootstrapped for Thing from Class.');
 
     //Except Thing needs a different __instantiate__ method, which doesn't try to
     // go up any higher, so it doesn't go up forever.
-    var instantiateAThing = function(attachTo, bindTo) {
+    var instantiateAThing = function(attachTo, bindTo, bindFunc) {
         //Now we override and extend the methods from the parent classes by updating the object
         // with those methods that were provided. We'll bind them to obj, and attach them to
         // obj as well.
-        _bindAll(attachTo, bindTo, this.__methods__);
+        _bindAll(attachTo, bindTo, this.__methods__, 'Methods added by ThingClass from ' + this.__name__, bindFunc);
 
         //An instance of Thing is it's own super object, since Thing is it's own parent class.
         //FIXME: Does this work right?
