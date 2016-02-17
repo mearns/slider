@@ -66,6 +66,7 @@ function module_init() {
         return obj;
     };
 
+    //TODO: Can use use this Function type to make classes functions so the javascript new operator can be used?
     function _newObject(className) {
         var func = new Function(
             "return function " + className + "(){};"
@@ -125,6 +126,18 @@ function module_init() {
         create: function() {
             return _create(this, _newObject(this.__name__), arguments);
         },
+
+        /**
+         * Create a subclass of this object. The meta class is the same as
+         * this object's metaclass, unless specified.
+         */
+        subclass: function(name, methods, metaclass) {
+            if (typeof(metaclass) === "undefined") {
+                metaClass = this.getParentClass();
+            }
+            return metaClass.create(name, methods, this);
+        },
+
 
         //TODO: Test.
         subclass: function(name, methods) {
@@ -193,6 +206,17 @@ function module_init() {
     };
     Thing.__instantiate__ = _bind(Thing, instantiateAThing, "instantiateAThing");
 
+    //It also needs to override the subclass method, so that subclasses use Class
+    // as the metaclass, instead of ThingClass.
+    var subclassThing = function(name, methods, metaclass) {
+        if (typeof(metaclass) === "undefined") {
+            metaClass = Class;
+        }
+        return metaClass.create(name, methods, this);
+    };
+    Thing.subclass = _bind(Thing, subclassThing, "subclassThing");
+
+
     //Init the object, as a class. It is it's own parent class (because all classes
     // extend from Thing).
     Thing.__init__("Thing", methodsProvidedByThing, Thing);
@@ -200,7 +224,10 @@ function module_init() {
     //Because it has a different __instantiate__ method, it must have gotten that method from somewhere 
     // other than Class, because it had to override the one provided by Class. So it must have a
     // different meta class. Let's create that.
-    Thing.__class__ = Class.create("ThingClass", {__instantiate__: instantiateAThing}, Class);
+    Thing.__class__ = Class.subclass("ThingClass", {
+        __instantiate__: instantiateAThing,
+        subclass: subclassThing
+    });
 
     return Thing;
 }

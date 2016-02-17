@@ -21,7 +21,7 @@
             // Which probably just means an override of extend() in ThingClass.
             var Class = Thing.getClass().getClass();
 
-            var Animal = Class.create("Animal", {
+            var Animal = Thing.subclass("Animal", {
 
                 speach: function() {
                     return "Animal sound.";
@@ -30,23 +30,19 @@
                 speak: function() {
                     console.log(this.speach());
                 }
-            },
-            Thing
-            );
+            });
 
-            var GenericAnimal = Class.create("GenericAnimal", {
+            var GenericAnimal = Animal.subclass("GenericAnimal", {
                 speach: function() {
                     return "Generic " + this.super.speach();
                 }
-            },
-            Animal);
+            });
 
-            var SpecificAnimal = Class.create("SpecificAnimal", {
+            var SpecificAnimal = GenericAnimal.subclass("SpecificAnimal", {
                 speach: function() {
                     return "Non-" + this.super.speach();
                 }
-            },
-            GenericAnimal);
+            });
 
 
             var a = Animal.create();
