@@ -88,16 +88,23 @@ function module_init() {
         return obj;
     };
 
+    /**
+     * Create a new empty object of the given classname, to be initialized as
+     * a proper OOP instance.
+     */
     function _newObject(className) {
-        var func = new Function(
-            "return function " + className + "(){};"
-        )();
-        return new func();
+        if (__debug__) {
+            var func = new Function(
+                "return function " + className + "(){};"
+            )();
+            return new func();
+        }
+        return {};
     };
 
+    //The methods provided by the top-level Thing class.
     var methodsProvidedByThing = {
 
-        //Object methods
         getClass: function() {
             return this.__class__;
         },
@@ -108,6 +115,7 @@ function module_init() {
 
     };
 
+    //The methods provided by the Class class.
     var methodsProvidedByClass = {
 
         /**
@@ -222,7 +230,9 @@ function module_init() {
 
         //An instance of Thing is it's own super object, since Thing is it's own parent class.
         //FIXME: Does this work right?
-        attachTo.super = attachTo;
+        var sup = {};
+        sup.super = sup;
+        attachTo.super = sup;
         return attachTo;
     };
     Thing.__instantiate__ = _bind(Thing, instantiateAThing, "instantiateAThing");

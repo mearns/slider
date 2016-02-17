@@ -29,6 +29,10 @@
 
                 speak: function() {
                     console.log(this.speach());
+                },
+
+                getClassName: function() {
+                    return "Animal: " + this.super.getClassName();
                 }
             });
 
@@ -39,6 +43,8 @@
             });
 
             var SpecificAnimal = GenericAnimal.subclass("SpecificAnimal", {
+                //XXX: FIXME: When binding parent methods, this.super that's available
+                // there needs to be the appropriately higher level.
                 speach: function() {
                     return "Non-" + this.super.speach();
                 }
@@ -58,6 +64,12 @@
             a.speak();
             g.speak();
             s.speak();
+
+            console.log("-----------------------------------------------");
+
+            //This should not be "Animal: Animal: Animal: SpecificAnimal".
+            // It should just be "Animal: SpecificAnimal".
+            console.log(s.getClassName());
         
         // ]]>
         </script>
